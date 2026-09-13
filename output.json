@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-13T15:17:51.401677+00:00",
+  "timestamp": "2026-09-13T16:15:06.015007+00:00",
   "insights": {
     "average_latency_ms": 156.018,
     "max_cpu_usage": 99.0,
@@ -39,54 +39,49 @@
   ],
   "recommendations": [
     {
-      "id": "a52bb046-6035-426e-b4b9-b0fbf3e1014f",
-      "action": "enable_auto_scaling",
-      "target": "compute_instance_group",
+      "id": "ee3869d4-3aec-4159-aec8-f0aeb008cb7a",
+      "action": "scale_up",
+      "target": "groupe_instances_web",
       "parameters": {
-        "cpu_target_percent": 70,
-        "scale_up_threshold": 80,
-        "scale_down_threshold": 40,
-        "scale_up_step": 2,
-        "scale_down_step": 1,
-        "max_instances": 10,
-        "min_instances": 2
+        "instances_supplémentaires": 2,
+        "cpu_par_instance": "4vCPU"
       },
-      "benefit_estimate": "Maintains CPU usage below the 80% threshold, reduces risk of service latency, and improves system resilience during traffic spikes."
+      "benefit_estimate": "Répartition de la charge, réduction du pic CPU, amélioration de la stabilité et prévention d'alertes critiques"
     },
     {
-      "id": "575363c3-2294-49f0-827c-c01ece648d9f",
-      "action": "Scale up memory resources",
-      "target": "Compute instance 'web-app-01'",
+      "id": "77755cbd-ce83-427c-a9d4-130c5776ded7",
+      "action": "increase_memory_allocation",
+      "target": "compute_instance_id",
       "parameters": {
         "current_usage_percent": 92.0,
         "threshold_percent": 85.0,
-        "recommended_memory_gb": 16,
-        "current_memory_gb": 8,
-        "scaling_method": "vertical scaling",
-        "graceful_restart": true
+        "new_memory_gb": 32,
+        "scale_type": "vertical"
       },
-      "benefit_estimate": "Reduces risk of out‑of‑memory crashes and improves application performance, lowering incident likelihood by ~70%."
+      "benefit_estimate": "Réduction du risque de OOM de 80% et amélioration de la stabilité du service."
     },
     {
-      "id": "a9009a72-3798-4229-9d2a-4d2d04cbb632",
-      "action": "Scale out compute resources",
-      "target": "Application servers",
+      "id": "9a718a1c-b201-46ba-812d-6adf510a40e2",
+      "action": "scale_up_and_optimize",
+      "target": "instance_app_server",
       "parameters": {
-        "scale_factor": 2,
+        "increase_cpu": "2 vCPU",
+        "add_memory": "4GB",
+        "enable_caching": true,
+        "adjust_load_balancer_timeout_ms": 300
+      },
+      "benefit_estimate": "Réduction estimée de la latence à moins de 200 ms, amélioration de la stabilité et diminution des erreurs de timeout."
+    },
+    {
+      "id": "06ae32ee-931b-4716-9425-749fc793e149",
+      "action": "scale_up",
+      "target": "service web front-end",
+      "parameters": {
+        "instance_type": "t3.medium",
+        "replica_increment": 2,
         "monitoring_window": "5m"
       },
-      "benefit_estimate": "Latency expected to drop below 200 ms within 10 minutes, restoring SLA compliance and improving user experience"
-    },
-    {
-      "id": "93e95789-b282-478d-a7cd-5982fab46ede",
-      "action": "scale_out",
-      "target": "error-prone-service",
-      "parameters": {
-        "additional_instances": 2,
-        "cooldown_minutes": 5,
-        "notify_team": "ops"
-      },
-      "benefit_estimate": "Expected reduction of error_rate to <0.05 within 10 minutes, restoring SLA compliance and minimizing user impact."
+      "benefit_estimate": "En augmentant le nombre d'instances, on réduit la surcharge qui cause les erreurs, permettant de ramener le error_rate sous le seuil de 0.05 et d'améliorer la stabilité du service."
     }
   ],
   "service_status_summary": {

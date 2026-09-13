@@ -13,6 +13,7 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 MODEL="openai/gpt-oss-120b"
 SYSTEM_PROMPT = """Tu es un expert en infrastructure système et cloud.
 Ton role est de générer une recommandation technique pour résoudre l'anomalie fournie.
+Réponds impérativement en français,
 
 Tu dois répondre strictement au format JSON valide avec les clés suivantes  : {"action": "string", "target": "string", "parameters": {}, "benefit_estimate": "string"}"""
 
