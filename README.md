@@ -13,42 +13,22 @@ L'application génère un rapport structuré (`output.json`) contenant :
 
 ## Architecture
 
-Le traitement est organisé sous forme d'un pipeline composé de plusieurs nœuds :
+Le traitement est organisé sous forme d'un pipeline composé de plusieurs nœuds, qui s'enchaînent dans l'ordre suivant :
 
 ```text
 rapport.json
-     │
-     ▼
-┌──────────────┐
-│  ingestion   │
-│              │
-│ Lecture et   │
-│ validation   │
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐
-│   analysis   │
-│              │
-│ Insights +   │
-│ anomalies    │
-└──────┬───────┘
-       │
-       ▼
-┌──────────────────┐
-│ recommendation   │
-│                  │
-│ Recommandations  │
-│ générées par LLM │
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────┐
-│    output    │
-│              │
-│ Génération   │
-│ du rapport   │
-└──────────────┘
+     |
+     v
+[ ingestion ]        Lecture et validation des logs
+     |
+     v
+[ analysis ]         Calcul des insights + détection des anomalies
+     |
+     v
+[ recommendation ]   Génération des recommandations via LLM
+     |
+     v
+[ output ]           Écriture du rapport final (output.json)
 ```
 
 L'orchestration de ces étapes est réalisée avec **LangGraph**. Chaque étape reçoit et met à jour un état partagé (`PipelineState`).
@@ -83,21 +63,24 @@ Cela permet notamment de :
 
 ### LangGraph
 
-LangGraph permet de représenter clairement le pipeline sous forme de nœuds successifs.
+LangGraph permet de représenter clairement le pipeline sous forme de nœuds successifs, avec un état partagé qui circule entre eux.
 
-Le choix d'un graphe permet également de faire évoluer plus facilement le pipeline par la suite, par exemple en ajoutant une étape de validation ou un nouveau traitement.
+Le choix d'un graphe permet également de faire évoluer plus facilement le pipeline par la suite, par exemple en ajoutant une étape de validation, un nouveau traitement, ou une branche conditionnelle (par exemple, un traitement prioritaire si une anomalie de sévérité "high" est détectée).
 
 ### LLM
 
 Le LLM est utilisé uniquement pour générer les recommandations dans `recommendation.py`.
 
-La détection des anomalies et le calcul des indicateurs restent déterministes. Cela permet de garder une analyse reproductible et de réserver l'utilisation du LLM à la génération de recommandations.
+La détection des anomalies et le calcul des indicateurs restent déterministes (basés sur des seuils numériques). Cela permet de garder une analyse reproductible et rapide, et de réserver l'utilisation du LLM à la tâche où il apporte une réelle valeur ajoutée : la formulation d'une recommandation contextualisée en langage naturel.
 
-Le projet utilise actuellement **Groq** avec le modèle `openai/gpt-oss-120b`.
+Le projet utilise **Groq** avec le modèle `openai/gpt-oss-120b`. Le prompt système impose explicitement une réponse en français et un format JSON strict, afin de garantir la cohérence linguistique et structurelle du rapport final.
 
 ## Détection des anomalies
 
-Les données fournies dans le sujet ne définissent pas de seuils précis pour les anomalies. Des seuils ont donc été définis pour les principales métriques :
+Les données fournies dans le sujet ne définissent pas de seuils précis pour les anomalies ("une utilisation excessive du CPU, une latence élevée, etc."). Les seuils suivants ont donc été définis à partir de deux sources complémentaires :
+
+1. **Pratiques usuelles de supervision d'infrastructure** : des seuils communément admis en observabilité, indépendants du jeu de données fourni.
+2. **Observation empirique du jeu de données fourni** (`rapport.json`) : les seuils ont été calibrés pour bien séparer le fonctionnement normal des pics anormaux réellement observés dans les 500 entrées de logs (par exemple, un CPU habituellement autour de 55-60 %, avec des pics isolés à 93-99 % coïncidant avec un passage du service `api_gateway` en statut `degraded`).
 
 | Métrique | Seuil | Sévérité medium | Sévérité high |
 |---|---:|---:|---:|
@@ -106,7 +89,9 @@ Les données fournies dans le sujet ne définissent pas de seuils précis pour l
 | Latence | 200 ms | 250 ms | 300 ms |
 | Taux d'erreur | 0.05 | 0.07 | 0.10 |
 
-Ces valeurs sont utilisées comme règles de détection simples et explicables. Elles pourraient être externalisées dans une configuration dédiée dans une version destinée à la production.
+Le passage en sévérité `medium` puis `high` permet de distinguer un dépassement léger d'une situation réellement critique, plutôt qu'un simple indicateur binaire anomalie / pas anomalie.
+
+Ces seuils restent des constantes fixes dans le code, choisies pour ce jeu de données précis. Dans un contexte de production réel, ils gagneraient à être externalisés dans un fichier de configuration, voire calculés dynamiquement par rapport à une baseline historique.
 
 ## Statut des services
 
@@ -116,7 +101,7 @@ Le champ `service_status_summary` fournit un état des services réparti entre :
 - `degraded`
 - `offline`
 
-Le statut utilisé correspond à la dernière entrée disponible dans les logs. Le résultat représente donc un **snapshot de l'état actuel** des services plutôt qu'un historique.
+Le statut utilisé correspond à la dernière entrée disponible dans les logs. Le résultat représente donc un **snapshot de l'état actuel** des services plutôt qu'un historique complet sur la période.
 
 ## Installation
 
@@ -149,7 +134,7 @@ pip install -r requirements.txt
 Créer ensuite un fichier `.env` à la racine du projet :
 
 ```env
-GROQ_API_KEY=votre_clé_api
+GROQ_API_KEY=votre_cle_api
 ```
 
 ## Exécution
@@ -198,8 +183,8 @@ Quelques améliorations pourraient être apportées dans une version plus avanc�
 
 - ajouter des tests unitaires et d'intégration ;
 - externaliser les seuils de détection dans un fichier de configuration ;
-- ajouter une gestion plus complète des erreurs d'entrée ;
-- enrichir les règles de détection avec des données historiques ;
-- ajouter d'autres nœuds au pipeline, par exemple une étape de validation ou de priorisation des anomalies.
+- ajouter une gestion plus complète des erreurs (retry sur l'appel LLM, logging structuré) ;
+- enrichir les règles de détection avec des données historiques ou une baseline dynamique ;
+- ajouter d'autres nœuds au pipeline, par exemple une étape de validation ou de priorisation des anomalies, éventuellement via une branche conditionnelle LangGraph selon la sévérité globale du rapport.
 
 Ces évolutions pourraient être ajoutées sans modifier le principe général du pipeline.
