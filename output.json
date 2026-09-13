@@ -1,0 +1,101 @@
+{
+  "timestamp": "2026-09-13T15:17:51.401677+00:00",
+  "insights": {
+    "average_latency_ms": 156.018,
+    "max_cpu_usage": 99.0,
+    "max_memory_usage": 92.0,
+    "error_rate": 0.031580000000000004,
+    "uptime_seconds": 1258200
+  },
+  "anomalies": [
+    {
+      "metric": "cpu_usage",
+      "value": 99.0,
+      "threshold": 80.0,
+      "severity": "high",
+      "description": "Pic de cpu_usage détecté à 99.0%, dépassant le seuil de 80%."
+    },
+    {
+      "metric": "memory_usage",
+      "value": 92.0,
+      "threshold": 85.0,
+      "severity": "medium",
+      "description": "Pic de memory_usage détecté à 92.0%, dépassant le seuil de 85%."
+    },
+    {
+      "metric": "Latency_ms",
+      "value": 384.0,
+      "threshold": 200.0,
+      "severity": "high",
+      "description": "Pic de Latency_ms détecté à 384.0ms, dépassant le seuil de 200ms."
+    },
+    {
+      "metric": "error_rate",
+      "value": 0.13,
+      "threshold": 0.05,
+      "severity": "high",
+      "description": "Pic de error_rate détecté à 0.13 , dépassant le seuil de 0.05 ."
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "a52bb046-6035-426e-b4b9-b0fbf3e1014f",
+      "action": "enable_auto_scaling",
+      "target": "compute_instance_group",
+      "parameters": {
+        "cpu_target_percent": 70,
+        "scale_up_threshold": 80,
+        "scale_down_threshold": 40,
+        "scale_up_step": 2,
+        "scale_down_step": 1,
+        "max_instances": 10,
+        "min_instances": 2
+      },
+      "benefit_estimate": "Maintains CPU usage below the 80% threshold, reduces risk of service latency, and improves system resilience during traffic spikes."
+    },
+    {
+      "id": "575363c3-2294-49f0-827c-c01ece648d9f",
+      "action": "Scale up memory resources",
+      "target": "Compute instance 'web-app-01'",
+      "parameters": {
+        "current_usage_percent": 92.0,
+        "threshold_percent": 85.0,
+        "recommended_memory_gb": 16,
+        "current_memory_gb": 8,
+        "scaling_method": "vertical scaling",
+        "graceful_restart": true
+      },
+      "benefit_estimate": "Reduces risk of out‑of‑memory crashes and improves application performance, lowering incident likelihood by ~70%."
+    },
+    {
+      "id": "a9009a72-3798-4229-9d2a-4d2d04cbb632",
+      "action": "Scale out compute resources",
+      "target": "Application servers",
+      "parameters": {
+        "scale_factor": 2,
+        "monitoring_window": "5m"
+      },
+      "benefit_estimate": "Latency expected to drop below 200 ms within 10 minutes, restoring SLA compliance and improving user experience"
+    },
+    {
+      "id": "93e95789-b282-478d-a7cd-5982fab46ede",
+      "action": "scale_out",
+      "target": "error-prone-service",
+      "parameters": {
+        "additional_instances": 2,
+        "cooldown_minutes": 5,
+        "notify_team": "ops"
+      },
+      "benefit_estimate": "Expected reduction of error_rate to <0.05 within 10 minutes, restoring SLA compliance and minimizing user impact."
+    }
+  ],
+  "service_status_summary": {
+    "online": [
+      "database",
+      "api_gateway",
+      "cache"
+    ],
+    "degraded": [],
+    "offline": []
+  }
+}
